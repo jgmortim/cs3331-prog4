@@ -1,0 +1,125 @@
+                                    README
+
+Question 1:
+
+Proof: There are never more than m baby eagles eating.
+
+The number of available full feeding pots is protected by a mutex. The mutex is
+locked and then the program checks the counter for the number of available full
+pots. If the number is greater than zero, the baby gets to eat and the number
+of pots is reduced by one. Then the mutex is unlocked. If the number is 0, the
+baby must wait until the pots are filled before it can checking the number of
+available pots again. This number is initialized to 0. When the mother fills
+the pots, the number of available pots is set to m (this is done inside the
+mutex lock).
+Since the number of available pots can never drop below zero or become greater
+than m, the max number of baby eagles eating can never exceed m.
+
+Question 2:
+
+Proof: A baby eagle must wait when he wants to eat but there are no available
+full feeding pots.
+
+As stated in Question 1 a baby may not eat if the number of available full pots
+is 0. This waiting is accomplished with a semaphore.  After seeing that all of
+the pots are empty/in use, the baby reaches a semaphore wait() command. This
+semaphore (Filled) is only signal()ed by the mother after the pots have been
+filled. When this happens, the number of times the Filled is signal()ed is
+equal to the number of pots.
+Thus the baby will wait until full feeding pots become available.
+
+Question 3:
+
+Proof: If there is a full feeding pot, a ready-to-eat baby eagle can eat.
+
+There are two things that can prevent the baby from getting a pot: the Filled
+semaphore and the mutex "Counter" (described in question 1). Filled will only
+block if there are no available full pots; this is not the case. The Counter
+mutex may temporarily block the baby until the baby can acquire the lock. This
+will happen in finite time as there are no Wait() commands (or any other
+blocking commands) present within the sections protected by Counter.
+
+Question 4:
+
+Proof: No hungry baby eagle will eat using an empty feeding pot.
+
+As previously stated, the number of available full pots cannot drop below zero.
+If the number is 0, the baby has to wait. Thus, an empty pot cannot be used to
+eat from.
+
+Question 5:
+
+Proof: At any time, a feeding pot can only be used by one eating baby eagle.
+
+This follows from the previous questions. Additionally, in my program the pots
+are not distinct objects, rather they are given numbers in the order that are
+taken by baby eagles. There are m pots and each "pot" is protected by the mutex
+Counter, so one pots cannot be taken/used by two eagles at the same time.
+
+Question 6:
+
+Proof: Only one baby eagle who wants to eat can wake up the mother eagle.
+
+In my program when a hungry baby sees that all pots are taken or empty, the
+baby then checks to see if the "repID" int value is 0. If it is 0, there is no
+"representative" and the baby becomes the rep and sets repID to the baby's
+number. There can only be one rep. The rep waits for all pots to become empty
+(this is signal()ed by the last baby eating). Then the rep Signal()s the
+"Sleep" semaphore, which wakes-up the mother. (The mother sets repID to 0 after
+filling the pots.) Additionally, repID is protected by the mutex Counter. Thus,
+there can be only one rep.
+
+Question 7:
+
+proof: The mother eagle does not prepare food until a baby wakes her up.
+
+When the mother goes to sleep, see calls Sleep.Wait(). Sleep is a semaphore
+that is initialize as 0. She cannot do anything until a baby wakes her up by
+calling Sleep.Signal(), which is done by the rep.
+
+Question 8:
+
+Proof: No baby can wake up the mother when she is preparing food.
+
+Building on Question 6, repID will not be reset to zero (the postion open for a
+new baby) until the mother has finished filling all of the pots. If no baby can
+become the rep, then no baby can attempt to wake up the mother.
+
+Question 9:
+
+Proof: Before all m feeding pots are filled, no hungry baby eagle can eat.
+
+Access to the pots is protected by the mutex Counter. The mother locks Counter
+before filling and unlocks Counter after filling all m pots. The babies need to
+lock Counter before they can get a pot. This is impossible while the mother has
+the lock on Counter.
+
+
+Question 10:
+
+When the pots are all filled, the only thing preventing the babies from getting
+pots is the mutex Counter and the semaphore Filled. The mother Signal()s Filled
+once for every pot and then unlocks Counter, this allows up to m baby eagles
+the chance to eat. Then the mother calls goto_sleep() and sleeps until a baby
+wakes her up again.
+
+
+Question 11:
+
+After the mother fills the pots for the last time, the retire() function is
+called and the rep position is blocked by setting repID to -1. No baby can be-
+come the rep after this. The retire() function waits until all pots are empty (
+using the semaphore that the rep used to wait for). Additionally, a boolean 
+"retired" is set to true. When a baby tries to get food, if it sees that the 
+retired boolean is true, the ready_to_eat() function returns 1 to tell the
+thread to exit. Some of the babies will have already made it past this check
+and are waiting for the pots to be filled. The retire() function, after all
+pots are empty, will Signal() all of the waiting babies so that they can check
+the status of the retired boolean. The babies will see that the mother is
+retired and exit. 
+All of the threads have terminated and the main program is now free to exit.
+
+
+
+
+
